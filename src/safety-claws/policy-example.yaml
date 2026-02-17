@@ -1,0 +1,69 @@
+# SafetyClawz Prototype Policy Example
+# Copy to ~/.safetyclawz/policy.yaml to use
+#
+# INTEGRATION: This policy leverages OpenClaw's built-in security knowledge
+# Source: src/openclaw/src/security/dangerous-tools.ts
+# OpenClaw's dangerous tools: exec, spawn, shell, sessions_spawn, sessions_send,
+#                              gateway, fs_write, fs_delete, fs_move, apply_patch
+
+safeguards:
+  # Exec tool protection (shell commands)
+  exec:
+    # Blocked command patterns (based on OpenClaw skill-scanner.ts)
+    blocked_commands:
+      # Recursive deletion
+      - "rm -rf /"           # Recursive delete root
+      - "sudo rm"            # Sudo delete
+      - "format C:"          # Windows format
+      - "del /F /S /Q C:\\*" # Windows recursive delete
+      
+      # Disk operations
+      - "dd if=/dev/zero"    # Disk wipe
+      - "mkfs."              # Filesystem format
+      
+      # Fork bombs
+      - ":(){ :|:& };:"      # Fork bomb
+      
+      # Piped execution (supply-chain attack vector)
+      - "curl.*| sh"         # Pipe to shell
+      - "curl.*| bash"       # Pipe to bash
+      - "wget.*| sh"         # Pipe to shell
+      - "wget.*| bash"       # Pipe to bash
+      
+      # System modification
+      - "chmod 777"          # Overly permissive
+      - "chown root"         # Privilege escalation
+      
+    # Blocked paths (based on OpenClaw audit.ts filesystem checks)
+    blocked_paths:
+      # SSH keys
+      - "~/.ssh"              # SSH keys
+      
+      # Cloud credentials (env-harvesting detection from skill-scanner.ts)
+      - "~/.aws"              # AWS credentials
+      - "~/.config/gcloud"    # Google Cloud
+      - "~/.azure"            # Azure credentials
+      
+      # System files (Unix)
+      - "/etc/passwd"         # System password file
+      - "/etc/shadow"         # Shadow passwords
+      - "/etc/sudoers"        # Sudo configuration
+      
+      # System files (Windows)
+      - "C:\\Windows\\System32"  # Windows system folder
+      - "C:\\Program Files"   # Windows programs
+      
+      # OpenClaw state (prevent self-modification)
+      - "~/.openclaw/config.json"  # Config tampering
+      - "~/.openclaw/state"        # State tampering
+
+# Future Growth features (not implemented in prototype):
+# - messaging.allowed_contacts
+# - messaging.rate_limit
+# - files.write_blocked_extensions
+#
+# Future V1 features (aligned with OpenClaw security model):
+# - Allowlist mode for dangerous tools (exec, spawn, shell)
+# - Rate limiting for sessions_spawn (prevent RCE spam)
+# - Contact allowlists for messaging tools
+# - Integration with OpenClaw's security audit system

@@ -1,0 +1,17 @@
+{
+  "id": "safetyclawz",
+  "name": "SafetyClawz",
+  "description": "Execution firewall - Blocks dangerous commands based on YAML policy",
+  "version": "0.1.0-prototype",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "policyFile": {
+        "type": "string",
+        "default": "~/.safetyclawz/policy.yaml",
+        "description": "Path to YAML policy file"
+      }
+    }
+  }
+}

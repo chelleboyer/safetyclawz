@@ -1,0 +1,40 @@
+{
+  "name": "safetyclawz",
+  "version": "0.1.0-prototype",
+  "description": "Execution firewall for autonomous agents - OpenClaw plugin proof of concept",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:debug": "SAFETYCLAWZ_DEBUG=true vitest run",
+    "test:verbose": "SAFETYCLAWZ_DEBUG=true vitest run --reporter=verbose"
+  },
+  "bin": {
+    "safetyclawz-audit": "./bin/audit.js"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "safety",
+    "guardrails",
+    "agent-security"
+  ],
+  "author": "SafetyClawz Contributors",
+  "license": "MIT",
+  "peerDependencies": {
+    "openclaw": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "tail": "^2.2.6",
+    "yaml": "^2.6.1"
+  }
+}
