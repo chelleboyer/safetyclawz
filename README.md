@@ -66,7 +66,7 @@ api.registerHook('before_tool_call', async (event) => {
 
 ## Features
 
-### ✅ **Prototype (v0.1.0)** - Available Now
+### ✅ **Prototype (v0.1.0)** - Testing In Progress
 
 - 🛡️ **Exec command blocking** - Prevent dangerous shell commands
 - 📋 **YAML-based policies** - Simple, declarative safety rules
