@@ -4,15 +4,19 @@
 **Version**: 0.1.0-prototype  
 **Purpose**: Validate OpenClaw plugin hook blocking capability
 
+## Sources
+
+- [../../docs/Appendix-OpenClaw-Docs.md](../../docs/Appendix-OpenClaw-Docs.md)
+
 ---
 
 ## What This Prototype Does
 
 ✅ **Blocks dangerous exec commands** using `before_tool_call` hook  
 ✅ **Loads YAML policy file** with customizable blocklists  
-✅ **Logs all tool calls** using `after_tool_call` hook  
+✅ **Logs tool calls to console** using `after_tool_call` hook  
 ✅ **Proves plugin architecture works** for SafetyClawz V1  
-✅ **Integrates OpenClaw's security knowledge** - Uses patterns from [src/security/dangerous-tools.ts](../openclaw/src/security/dangerous-tools.ts)
+✅ **Integrates OpenClaw's security knowledge** - Uses dangerous tool baselines and exec patterns derived from OpenClaw security sources
 
 ---
 
@@ -192,14 +196,14 @@ npm run test:debug
 
 ### Audit Log Viewer
 
-**CLI Tool**: `safetyclawz-audit` (future - bin/audit.ts ready)
+**CLI Tool**: `safetyclawz-audit` (future - bin/audit.ts exists, JSONL logging not in prototype)
 
 Planned features:
 - `safetyclawz-audit --tail` - Follow audit log in real-time
 - `safetyclawz-audit --last 10` - Show recent 10 entries
 - `safetyclawz-audit --blocked` - Filter blocked actions only
 
-**Audit Log Format** (JSONL):
+**Audit Log Format** (JSONL, V1 target):
 ```json
 {
   "timestamp": "2026-02-16T12:34:56.789Z",
@@ -266,8 +270,8 @@ api.registerHook('before_tool_call', async (event, ctx) => {
 
 **Policy Format** ([policy-example.yaml](policy-example.yaml)):
 ```yaml
-# Patterns sourced from OpenClaw's security team
-# See: src/openclaw/src/security/dangerous-tools.ts
+# Patterns derived from OpenClaw security sources
+# See: src/openclaw/src/security/skill-scanner.ts and src/openclaw/src/security/audit.ts
 
 safeguards:
   exec:
@@ -291,7 +295,7 @@ safeguards:
 | Exec allowlists | ❌ No | ✅ Yes |
 | Messaging rate limits | ❌ No | ✅ Yes |
 | File path protection | ❌ No | ✅ Yes |
-| Contact allowlists | ❌ No | ✅ Yes |
+| Outbound recipient allowlists | ❌ No | ✅ Yes |
 | JSONL audit logs | ❌ No (console only) | ✅ Yes |
 | Secret redaction | ❌ No | ✅ Yes |
 | CLI tool | ❌ No | ✅ Yes (`safetyclawz init`) |
@@ -303,13 +307,11 @@ safeguards:
 ## Validation Results
 
 ### ✅ Confirmed Working
-OpenClaw security patterns
-6. **Zero OpenClaw modifications**: Pure plugin API usage
-7. **OpenClaw security integration**: Leverages [dangerous-tools.ts](../openclaw/src/security/dangerous-tools.ts) patternsgin, loads hooks
-2. **before_tool_call CAN block**: Returning `{ block: true }` prevents execution
-3. **Policy YAML parsing**: Loads custom policies from `~/.safetyclawz/policy.yaml`
-4. **Pattern matching works**: Regex-free simple string matching (fast)
-5. **Fail-safe defaults**: No policy file → uses hard-coded safe defaults
+1. **before_tool_call CAN block**: Returning `{ block: true }` prevents execution
+2. **Policy YAML parsing**: Loads custom policies from `~/.safetyclawz/policy.yaml`
+3. **Pattern matching works**: Regex-free simple string matching (fast)
+4. **Fail-safe defaults**: No policy file → uses hard-coded safe defaults
+5. **OpenClaw security integration**: Leverages OpenClaw security patterns and hooks
 6. **Zero OpenClaw modifications**: Pure plugin API usage
 
 ### 📊 Performance

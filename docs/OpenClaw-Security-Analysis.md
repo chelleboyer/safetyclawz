@@ -4,6 +4,10 @@
 **Purpose**: Understand OpenClaw's built-in security systems to inform SafetyClawz design  
 **Source**: `src/openclaw/src/security/` directory (21 files)
 
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
+
 ---
 
 ## Executive Summary
@@ -62,7 +66,10 @@ Run comprehensive security scans of OpenClaw configuration and state:
 ```bash
 openclaw security audit           # Basic audit
 openclaw security audit --deep    # Includes plugin code scanning
+openclaw security audit --fix     # Applies safe guardrails (permissions, policy hardening)
 ```
+
+`--fix` uses the built-in remediation helpers (see `fix.ts`) to tighten common footguns (permissions, redaction defaults, and allowlist-friendly policies).
 
 ### Audit Report Structure
 
@@ -434,12 +441,12 @@ icacls %USERPROFILE%\.openclaw /inheritance:r /grant:r "%USERNAME%:(F)"
 | **Filesystem permission audit** | ✅ Unix + Windows ACL | ❌ V1 doesn't audit files |
 | **Secret handling** | ✅ Timing-safe comparison | ❌ V1 doesn't handle secrets |
 | **Gateway HTTP restrictions** | ✅ Tool-level deny list | ❌ V1 doesn't manage gateway |
-| **Runtime tool call blocking** | ❌ Audit only, no enforcement | ✅ `before_tool_call` hook |
+| **Runtime tool call blocking** | ✅ Tool policy + hooks (coarse-grained) | ✅ `before_tool_call` hook |
 | **Rate limiting** | ❌ No | ✅ Per-tool frequency limits |
-| **Contact allowlists** | ❌ No | ✅ Messaging safeguards |
+| **Outbound recipient allowlists** | ⚠️ Inbound allowlists only | ✅ Messaging safeguards |
 | **Path blocklists** | ❌ No | ✅ Exec/file safeguards |
-| **JSONL audit trail** | ❌ Security report only | ✅ Per-call execution logs |
-| **Fail-closed enforcement** | ❌ Informational warnings | ✅ Block on policy violation |
+| **JSONL audit trail** | ⚠️ Session transcripts exist, no query CLI | ✅ Per-call execution logs + query CLI |
+| **Fail-closed parameter enforcement** | ❌ No unified parameter policy (channel allowlists exist) | ✅ Block on policy violation |
 
 ---
 
@@ -455,13 +462,13 @@ icacls %USERPROFILE%\.openclaw /inheritance:r /grant:r "%USERNAME%:(F)"
 
 ### ❌ What OpenClaw Lacks (SafetyClawz Value Proposition)
 
-1. **Runtime enforcement** - Audit is informational, doesn't block
+1. **Unified parameter enforcement** - Tool policies and channel allowlists exist, but no cross-tool parameter policy for tool calls
 2. **Declarative policy YAML** - No user-configurable rules
 3. **Rate limiting** - No call frequency protection
-4. **Contact allowlists** - No messaging safeguards
+4. **Outbound recipient allowlists** - Inbound allowlists exist, but outbound recipients are not constrained
 5. **Path blocklists** - No exec path protection
-6. **JSONL audit trail** - No per-call queryable logs
-7. **Fail-closed defaults** - Audit doesn't prevent actions
+6. **JSONL audit trail** - No per-call queryable audit CLI
+7. **Fail-closed parameter defaults** - No unified parameter policy gate for tool calls
 
 ### Integration Points
 
@@ -515,10 +522,10 @@ The 7 code scanning rules detect **actual malicious patterns** seen in supply-ch
 - `obfuscated-code` → Malware obfuscation
 
 ### 3. **Audit is Informational, Not Preventative**
-OpenClaw can **detect** misconfigurations but **can't prevent** dangerous actions at runtime. This is SafetyClawz's primary value.
+OpenClaw can **detect** misconfigurations via audits, but audits are on-demand and not per-execution. SafetyClawz adds a dedicated per-call audit query surface on top of existing logs.
 
-### 4. **No Runtime Policy Enforcement**
-OpenClaw has no equivalent to SafetyClawz's `before_tool_call` blocking. The audit system runs on-demand, not per-execution.
+### 4. **Runtime Enforcement Exists, But It Is Narrow**
+OpenClaw **does** support `before_tool_call` blocking, tool allow/deny policies, and channel allowlists, but it does not provide a unified, cross-tool policy layer for tool-call parameters (rate limits, outbound recipient allowlists, path rules). SafetyClawz focuses on that gap.
 
 ### 5. **Gateway HTTP Restrictions Show Intent**
 The fact that OpenClaw blocks certain tools (`sessions_spawn`, `gateway`) via HTTP shows they understand the risks - but only for one surface. SafetyClawz generalizes this to all tool calls.

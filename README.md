@@ -18,20 +18,24 @@
 
 ---
 
+## Sources
+
+- [docs/Appendix-OpenClaw-Docs.md](docs/Appendix-OpenClaw-Docs.md)
+
 ## What is SafetyClawz?
 
 SafetyClawz is an **OpenClaw plugin** that adds runtime policy enforcement to your AI agents. It intercepts tool calls **before** they execute, evaluates them against your safety rules, and either allows or blocks them.
 
-**Built for [OpenClaw](https://github.com/openclaw/openclaw)** (202k+ ⭐ on GitHub) - the popular open-source personal AI assistant.
+**Built for [OpenClaw](https://github.com/openclaw/openclaw)** - open-source personal AI assistant (verify external popularity metrics before publishing).
 
 ### The Problem
 
 OpenClaw agents can:
 - 🖥️ Execute shell commands (`exec` tool)
-- 💬 Send messages to any contact (`imsg`, Discord, Telegram)
-- 📁 Read/write files (`fs_read`, `fs_write`)
-- 🌐 Make web requests (`fetch`, browser tools)
-- 🔧 Install skills and modify system files
+- 💬 Send messages to any contact (`message` tool across Discord/Slack/Telegram/etc.)
+- 📁 Read/write/edit files (`read`, `write`, `edit`, `apply_patch`)
+- 🌐 Make web requests (`web_fetch`, `web_search`, `browser`)
+- 🔧 Install skills/plugins and modify system files
 
 **But there's no unified safety layer** to prevent:
 - 💣 Dangerous commands (`rm -rf /`, `sudo rm`)
@@ -39,7 +43,7 @@ OpenClaw agents can:
 - 🔑 Secret leaks (GitHub tokens, API keys in logs)
 - 🚫 Path traversal attacks (`~/.ssh`, `~/.aws`)
 
-OpenClaw has **detection** (security audit, code scanner, threat model) but lacks **runtime enforcement**.
+OpenClaw has **detection** (security audit, code scanner, threat model) and coarse tool governance (tool profiles, allow/deny lists, provider-specific narrowing), plus **channel-level inbound allowlists** (e.g., allowFrom). It lacks a **unified, cross-tool parameter policy layer for tool calls** and a dedicated per-tool-call audit query surface.
 
 ### The Solution
 
@@ -67,7 +71,7 @@ api.registerHook('before_tool_call', async (event) => {
 - 🛡️ **Exec command blocking** - Prevent dangerous shell commands
 - 📋 **YAML-based policies** - Simple, declarative safety rules
 - 🎯 **Path protection** - Block access to sensitive directories
-- 📝 **Audit logging** - JSONL trail of all tool calls
+- 📝 **Audit logging** - Console audit trail (JSONL in V1)
 - 🎨 **Color-coded debug mode** - Real-time policy evaluation visibility
 - ✅ **8 unit tests** - Works without OpenClaw installation (mocked API)
 - 🔗 **OpenClaw security integration** - Uses production-validated dangerous tools list
@@ -75,7 +79,7 @@ api.registerHook('before_tool_call', async (event) => {
 ### 🚧 **V1 Roadmap** - Next 6 Months
 
 - ⏱️ **Rate limiting** - Prevent spam (10 messages/hour)
-- 📧 **Contact allowlists** - Only message approved contacts
+- 📧 **Outbound recipient allowlists** - Only message approved contacts
 - 🔐 **Secret redaction** - Redact tokens from audit logs
 - 🏷️ **Channel allowlists** - Only approved Discord/Slack servers
 - 📊 **CLI tools** - `safetyclawz init`, `safetyclawz audit`
@@ -198,8 +202,8 @@ SafetyClawz: 🛑 BLOCKED - Command references protected path "~/.ssh"
 ### 4. Check Audit Logs
 
 ```bash
-# View recent activity
-cat ~/.safetyclawz/audit.jsonl | tail -n 10
+# Prototype: audit logs are printed to console
+# V1: JSONL audit logs at ~/.safetyclawz/audit.jsonl
 ```
 
 ---
@@ -211,13 +215,14 @@ cat ~/.safetyclawz/audit.jsonl | tail -n 10
 - **[PRD.md](docs/PRD.md)** - Product requirements, user journeys, success metrics
 - **[Architecture-V1.md](docs/Architecture-V1.md)** - Technical architecture, MITRE ATLAS alignment, 6-month roadmap
 - **[Observability-Guide.md](docs/Observability-Guide.md)** - Debug logging, audit viewer, performance monitoring
+- **[Appendix-OpenClaw-Docs.md](docs/Appendix-OpenClaw-Docs.md)** - Official OpenClaw docs references used in this project
 
 ### OpenClaw Integration Research
 
 - **[OpenClaw-Integration-Research.md](docs/OpenClaw-Integration-Research.md)** - Plugin hook validation, blocking mechanism proof
 - **[OpenClaw-Security-Analysis.md](docs/OpenClaw-Security-Analysis.md)** - 21 security files analyzed, dangerous tools list, skill scanner patterns
-- **[OpenClaw-Test-Patterns.md](docs/OpenClaw-Test-Patterns.md)** - Testing strategy from 1,005+ OpenClaw tests
-- **[OpenClaw-Repo-Inventory.md](docs/OpenClaw-Repo-Inventory.md)** - Complete repository analysis (100+ docs, 60+ src directories)
+- **[OpenClaw-Test-Patterns.md](docs/OpenClaw-Test-Patterns.md)** - Testing strategy from 1,144+ OpenClaw tests
+- **[OpenClaw-Repo-Inventory.md](docs/OpenClaw-Repo-Inventory.md)** - Complete repository analysis (600+ docs, 60+ src directories)
 
 ### Prototype Documentation
 
@@ -282,17 +287,19 @@ cat ~/.safetyclawz/audit.jsonl | tail -n 10
 
 SafetyClawz aligns with [MITRE ATLAS](https://atlas.mitre.org/) (Adversarial Threat Landscape for AI Systems), the industry-standard AI security framework.
 
-**OpenClaw's 3 Trust Boundaries**:
+**OpenClaw's 5 Trust Boundaries**:
 1. **Channel Access** - Device pairing, authentication
 2. **Session Isolation** - Session keys, tool policies
-3. **Tool Execution** - Sandboxing, exec-approvals ← **SafetyClawz adds enforcement here**
+3. **Tool Execution** - Sandboxing, exec-approvals ← **SafetyClawz adds parameter-level enforcement here**
+4. **External Content** - Content wrapping, security notices
+5. **Supply Chain** - Skill publishing, moderation
 
 **Attack Mitigations**:
 
 | ATLAS Technique | Threat | SafetyClawz Mitigation |
 |----------------|--------|------------------------|
 | **AML.T0054** - LLM Prompt Injection | Malicious commands via user input | Block dangerous exec patterns |
-| **AML.T0048** - Exfiltration via Tool | Data theft via messaging | Rate limit + contact allowlists (V1) |
+| **AML.T0048** - Exfiltration via Tool | Data theft via messaging | Rate limit + outbound recipient allowlists (V1) |
 | **AML.T0020** - Backdoor via Tool | Persistent access | Block writes to startup files |
 | **AML.T0043** - Model Inversion | Extract training data | Block protected path reads |
 
@@ -414,13 +421,13 @@ safeguards:
 
 ### Why OpenClaw?
 
-OpenClaw (202k+ ⭐) is the most popular open-source AI agent with:
+OpenClaw is an open-source AI agent platform with:
 - 49+ built-in skills
 - Multi-channel support (WhatsApp, Discord, Telegram, iMessage)
 - Production-grade architecture
 - Active community
 
-**But it lacks runtime policy enforcement.** SafetyClawz fills this gap.
+**But it lacks a unified, cross-tool parameter policy layer.** SafetyClawz fills this gap.
 
 ### How is this different from OpenClaw's security features?
 
@@ -467,14 +474,14 @@ See [Architecture-V1.md](docs/Architecture-V1.md#131-technical-metrics) for deta
 - ✅ YAML policy loading
 - ✅ Exec command pattern matching
 - ✅ Protected path checking
-- ✅ Audit logging (JSONL)
+- ✅ Audit logging (console-only; JSONL is V1)
 - ✅ 8 unit tests (mocked API)
 - ✅ Color-coded debug logger
 
 ### 🚧 Phase 3: V1 Development (Months 1-6)
 
 **Sprint 1-2**: Policy engine (allowlist/deny modes, rate limiting)  
-**Sprint 3-4**: Messaging safeguards (contact allowlists, channel filtering)  
+**Sprint 3-4**: Messaging safeguards (outbound recipient allowlists, channel filtering)  
 **Sprint 5**: CLI tools (`safetyclawz init`, `safetyclawz audit`)  
 **Sprint 6**: Polish & launch (npm package, documentation)
 

@@ -3,7 +3,11 @@
 **Research Date**: 2026-02-16  
 **Purpose**: Understand OpenClaw's existing concepts and approval architecture to inform SafetyClawz MVP design
 
-**OpenClaw Context**: Massively popular open-source personal AI assistant (202k+ GitHub stars, verified Feb 2026). Broad tool ecosystem (exec, messaging, files, 49+ skills), active community, proven allowlist patterns. Large user base = large potential market for SafetyClawz safety tooling.
+**OpenClaw Context**: Open-source personal AI assistant with a broad tool ecosystem (exec, messaging, files) and 50+ skills in this workspace. External popularity metrics should be verified before publication.
+
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
 
 ---
 
@@ -147,14 +151,40 @@ type ExecHost = "sandbox" | "gateway" | "node";
 
 **SafetyClawz V1 should focus on `gateway` mode (local execution with allowlist wrapper).**
 
+**Note**: `tools.exec.host` defaults to `sandbox`, but if sandboxing is off, exec runs on the gateway host. Exec approvals apply when configured for `gateway` or `node` execution.
+
 ---
 
-### 5. **What OpenClaw DOESN'T Have (SafetyClawz Opportunities)**
+### 5. **Tool Policy Surface (Coarse-Grained)**
+
+OpenClaw provides tool governance by tool name, but not parameter-level rules:
+
+- `tools.allow` / `tools.deny` (deny wins; wildcards supported)
+- `tools.profile` base allowlist (`minimal`, `coding`, `messaging`, `full`)
+- `tools.byProvider` to narrow tool access by provider or provider/model
+- Tool group shorthands like `group:fs`, `group:runtime`, `group:web`
+- Per-agent overrides via `agents.list[].tools.*`
+
+These controls are valuable, but they do not cover parameters like recipients, file paths, or rate limits.
+
+---
+
+### 6. **Plugin System Notes (from official docs)**
+
+- Plugins run in-process with the Gateway; treat them as trusted code.
+- `openclaw plugins install` supports npm registry packages and local paths/tar/zip; npm specs are registry-only (no git/URL/HTTP specs).
+- Install uses `npm pack` + `npm install --ignore-scripts` to avoid lifecycle scripts.
+- `plugins.allow` / `plugins.deny` exist; unknown plugin ids in config are errors.
+- `plugins.slots` selects an exclusive plugin for categories like memory.
+
+---
+
+### 7. **What OpenClaw DOESN'T Have (SafetyClawz Opportunities)**
 
 ✅ **Unified policy across tool types**:
-- OpenClaw has allowlists for **exec only**
-- No allowlists for messaging, file operations, API calls
-- **SafetyClawz V1 can provide unified YAML for all tools**
+- OpenClaw has **per-command allowlists for exec**, **tool allow/deny policies** by tool name, and **channel-level inbound allowlists**
+- No unified policy for tool-call parameters (messaging recipients, file paths, API call targets)
+- **SafetyClawz V1 can provide unified YAML for tool parameters across tools**
 
 ✅ **Rate limiting**:
 - No rate limits on messaging tools
@@ -165,9 +195,9 @@ type ExecHost = "sandbox" | "gateway" | "node";
 - No blocklists for sensitive paths (`/`, `/etc`, `~/.ssh`)
 - **SafetyClawz V1 adds path blocklists**
 
-✅ **Contact allowlists**:
-- No concept of "approved recipients" for messaging
-- **SafetyClawz V1 adds contact allowlists**
+✅ **Outbound recipient allowlists**:
+- Inbound allowlists exist at the channel layer, but there is no outbound recipient allowlist for message tool calls
+- **SafetyClawz V1 adds outbound recipient allowlists**
 
 ✅ **Centralized audit queryable UI**:
 - OpenClaw stores JSONL transcripts but no query interface
@@ -203,7 +233,7 @@ result = wrapped_exec.execute("rm -rf /tmp/test")
 safeguards:
   messaging:
     rate_limit: 10/hour
-    allowed_contacts: ["+1234567890", "team@company.com"]
+    allowed_contacts: ["+1234567890", "team@company.com"]  # Outbound recipient allowlist
   
   exec:
     mode: allowlist  # Delegates to OpenClaw's allowlist logic
@@ -219,7 +249,7 @@ safeguards:
 ```jsonl
 {"timestamp": "2026-02-16T10:00:00Z", "tool": "exec", "command": "git status", "decision": "ALLOW", "reason": "in_allowlist"}
 {"timestamp": "2026-02-16T10:01:00Z", "tool": "exec", "command": "rm -rf /", "decision": "BLOCK", "reason": "blocked_path"}
-{"timestamp": "2026-02-16T10:02:00Z", "tool": "messaging.send", "to": "+9999999999", "decision": "BLOCK", "reason": "not_in_contact_allowlist"}
+{"timestamp": "2026-02-16T10:02:00Z", "tool": "messaging.send", "to": "+9999999999", "decision": "BLOCK", "reason": "not_in_recipient_allowlist"}
 ```
 
 #### 4. Simple CLI Query Interface:
@@ -325,10 +355,10 @@ const wrappedExecTool = safety.wrap(originalExecTool, {
 // Now all exec calls go through SafetyClawz policy + audit
 ```
 
-### **Example 2: Add Contact Allowlist to Messaging Tool (V1)**
+### **Example 2: Add Outbound Recipient Allowlist to Messaging Tool (V1)**
 
 ```typescript
-// OpenClaw doesn't have contact allowlists
+// OpenClaw doesn't provide outbound recipient allowlists for message tool calls
 // SafetyClawz adds this
 
 import { createMessageTool } from 'openclaw/agents/message-tools';
@@ -363,7 +393,7 @@ const wrappedMessageTool = safety.wrap(originalMessageTool, {
 - Wrap OpenClaw's existing allowlist logic (proven, tested)
 - Add unified YAML policy (OpenClaw lacks multi-tool coverage)
 - Add audit logging (OpenClaw has transcripts but no query interface)
-- Add missing safeguards (rate limits, contact allowlists, path blocklists)
+- Add missing safeguards (rate limits, outbound recipient allowlists, path blocklists)
 
 ### 2. **Growth Phase is Natural Progression**:
 ✅ Once V1 proves value, Growth adds:
@@ -390,7 +420,7 @@ User Journey:
 ### 5. **Differentiation We Provide**:
 ✅ **Unified policy language** across exec, messaging, files, API calls
 ✅ **Audit query interface** (`safetyclawz audit` CLI)
-✅ **Missing safeguards** OpenClaw doesn't have (rate limits, contact allowlists)
+✅ **Missing safeguards** OpenClaw doesn't have (rate limits, outbound recipient allowlists)
 ✅ **Policy versioning** (Growth phase: Git-based rollback)
 ✅ **Risk-based workflows** (Growth phase: heuristic + ML scoring)
 
@@ -412,7 +442,7 @@ User Journey:
 
 **Add Missing Safeguards**:
 - Rate limiting (messages per hour per tool)
-- Contact allowlists (approved recipients for messaging tools)
+- Outbound recipient allowlists (approved recipients for messaging tools)
 - Path blocklists (sensitive directories like `/`, `/etc`, `~/.ssh`)
 - Unified YAML policy (one config for all tool types)
 
@@ -432,7 +462,7 @@ OpenClaw exec tool has 3-mode security (`deny|allowlist|full`) and approval work
 
 SafetyClawz V1 **wraps** OpenClaw's allowlist evaluator and adds:
 1. Unified YAML policy for exec + messaging + files
-2. Missing safeguards (rate limits, contact allowlists, path blocklists)
+2. Missing safeguards (rate limits, outbound recipient allowlists, path blocklists)
 3. Audit query interface (`safetyclawz audit`)
 
 **Code Example**:
@@ -466,7 +496,7 @@ These OpenClaw files demonstrate the patterns SafetyClawz will leverage:
 4. **Security Model**:
    - `docs/concepts/agent.md` - Tool policy, workspace sandboxing
 
-These demonstrate SafetyClawz is building on **proven, production-tested patterns** from a 201k-star project.
+These demonstrate SafetyClawz is building on **proven, production-tested patterns** from the OpenClaw codebase in this workspace.
 
 ---
 

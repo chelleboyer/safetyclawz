@@ -12,6 +12,10 @@ majorGapsResolved: ['User Journeys', 'Success Criteria', 'Product Scope', 'Funct
 **PRD Being Validated:** docs/PRD.md
 **Validation Date:** 2026-02-16
 
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
+
 ## Input Documents
 
 - PRD: PRD.md ✓
@@ -52,14 +56,14 @@ majorGapsResolved: ['User Journeys', 'Success Criteria', 'Product Scope', 'Funct
 **Research Conducted**: Web search for actual OpenClaw usage patterns (GitHub, docs, community discussions)
 
 **Key Findings**:
-- **202k+ GitHub stars** (verified Feb 2026), active Discord community, multi-channel support
-- OpenClaw: Massively popular open-source personal AI assistant with broad tool access
+- OpenClaw: Open-source personal AI assistant with broad tool access
+- Popularity metrics (stars, community size) require external verification before publication
 - **Primary usage**: Software development automation, browser automation, messaging, smart home IoT
 - **NOT used for**: Industrial robotics, robotic arms, physical safety systems
 - **Real incidents documented**:
   - "The `find ~` incident" - agent dumped entire home directory to group chat
   - "Find the Truth attack" - prompt injection leading to filesystem exploration
-- **Security gaps**: Manual controls exist (allowlists, sandboxing) but NO execution approval workflow
+- **Security gaps**: Manual controls exist (tool allowlists, channel allowlists, sandboxing, exec approvals) but no unified parameter-level policy across tool calls
 
 **Decision**: Remove robotics journey (UJ-003) from V1 scope - not validated by actual market usage
 
@@ -246,7 +250,7 @@ These are **documentation polish items**, not blockers for PRD validation.
 **Overall PRD Quality**: **Strong** - User-centered foundation, validated market research, comprehensive requirements, realistic scope
 
 **Key Strengths**:
-1. Market validation via OpenClaw research (202k+ GitHub stars, real incidents documented)
+1. Market validation via OpenClaw research (verify external popularity metrics; real incidents documented)
 2. Traceability: All 45 requirements linked back to user journeys
 3. Tiered success criteria managing expectations while showing vision
 4. Comprehensive requirements coverage (functional, non-functional, domain/compliance)
@@ -286,7 +290,7 @@ These are **documentation polish items**, not blockers for PRD validation.
 **New V1 Scope (Months 1-6)**:
 - ✅ **Simple safeguards**: Allowlists (exec, contacts), rate limits, path blocklists
 - ✅ **Unified YAML policy**: One config file governs all tool types (vs scattered code)
-- ✅ **Audit logging**: Append-only JSONL logs (what OpenClaw lacks)
+- ✅ **Audit logging**: Append-only JSONL logs + per-tool-call query surface (OpenClaw stores transcripts but lacks a dedicated query interface)
 - ✅ **Two-state decisions**: ALLOW or BLOCK only (no approval prompts in V1)
 - ✅ **Wraps existing patterns**: Leverages OpenClaw's allowlist evaluator, not reinventing
 

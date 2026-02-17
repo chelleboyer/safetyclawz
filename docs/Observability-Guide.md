@@ -2,14 +2,18 @@
 
 **Purpose**: Real-time visibility into policy enforcement during testing and runtime
 
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
+
 ---
 
 ## Overview
 
-SafetyClawz includes comprehensive observability tooling:
+SafetyClawz includes comprehensive observability tooling (some items are V1 targets beyond the prototype):
 
 1. **Color-Coded Debug Logger** - Real-time policy evaluation output
-2. **Audit Log Viewer** - JSONL audit trail inspection (CLI tool ready)
+2. **Audit Log Viewer** - JSONL audit trail inspection (V1 target; prototype logs to console only)
 3. **Performance Timing** - Millisecond-level duration tracking
 4. **Rule-Level Tracing** - See exactly which patterns matched
 
@@ -94,11 +98,13 @@ Debug:  ENABLED (set SAFETYCLAWZ_DEBUG=true for verbose)
 
 ## 2. Audit Log Viewer
 
+**Status**: The CLI script exists, but the prototype does not write JSONL logs yet. JSONL audit logging is a V1 target.
+
 ### CLI Tool
 
 **File**: `bin/audit.ts` (compiled to `bin/audit.js`)
 
-**Installation**:
+**Installation (V1 target)**:
 ```bash
 npm install -g safetyclawz
 # Creates global command: safetyclawz-audit
@@ -120,7 +126,7 @@ safetyclawz-audit --tail --blocked    # Watch for blocks in real-time
 safetyclawz-audit --last 20 --blocked # Show recent blocks
 ```
 
-### Audit Log Format
+### Audit Log Format (V1 target)
 
 **File**: `~/.safetyclawz/audit.jsonl`  
 **Format**: JSONL (one JSON object per line)

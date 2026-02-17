@@ -1,5 +1,9 @@
 # 🦞 SAFETYCLAWZ
 
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
+
 ## The Execution Firewall for Autonomous Agents
 
 ---
@@ -59,7 +63,7 @@ Each journey follows this structure:
 
 **Actor**: Jake, OpenClaw developer maintaining custom approval logic
 
-**Context**: Manages autonomous agent with multiple tool types (exec, file operations, browser automation, channel messaging). OpenClaw provides tool allowlists and sandboxing, but **no execution approval workflow** for high-risk operations. Security documentation warns of prompt injection attacks like "Find the Truth" that manipulate agents into filesystem exploration, but only manual security controls exist.
+**Context**: Manages autonomous agent with multiple tool types (exec, file operations, browser automation, channel messaging). OpenClaw provides exec approvals plus tool policy controls (profiles, allow/deny lists, provider-specific narrowing) and sandboxing, and includes channel-level inbound allowlists, but lacks a unified policy for tool-call parameters across tool types (recipients, paths, rate limits). Security documentation warns of prompt injection attacks like "Find the Truth" that manipulate agents into filesystem exploration, but only manual security controls exist.
 
 **Current Pain**: 
 - 500+ lines of custom approval logic spread across tool handlers
@@ -153,10 +157,10 @@ Each journey follows this structure:
 2. Agent proposes: `exec rm -rf src/tests/`
 3. SafetyClawz evaluates: file deletion + recursive + source directory → Risk Score 0.85 → HIGH
 4. Decision: REQUIRE_APPROVAL
-5. Alex sees notification: "About to delete 47 files recursively in src/tests/ - APPROVE or DENY?"
+5. Alex sees notification: "About to delete 47 files recursively in src/tests/ - ALLOW or DENY?"
 6. Alex recognizes mistake (wrong path), denies
 7. Agent proposes: `exec rm -rf test-output/`
-8. SafetyClawz evaluates: build artifact directory → Risk Score 0.35 → LOW → APPROVE (auto-execute)
+8. SafetyClawz evaluates: build artifact directory → Risk Score 0.35 → LOW → ALLOW (auto-execute)
 
 **Success Metrics (V1)**:
 - 80% reduction in accidental destructive operations via blocklist enforcement
@@ -299,7 +303,7 @@ SafetyClawz development is organized into three phases: MVP (V1), Growth (V2-V3)
 
 **Allowlist-Based Protection** (wraps OpenClaw's existing allowlist logic):
 - **Exec tool allowlists**: Safe command patterns (`git`, `npm`, `ls` allowed; `rm -rf /` blocked)
-- **Contact allowlists**: Approved messaging recipients (prevent spam to entire contact list)
+- **Outbound recipient allowlists**: Approved messaging recipients (prevent spam to entire contact list)
 - **Path blocklists**: Sensitive directories (`/`, `/etc`, `/usr`, `~/.ssh`) off-limits
 - **Rate limiting**: Per-tool throttling (max 10 messages/hour prevents contact list spam)
 
@@ -321,7 +325,7 @@ safeguards:
     write_blocked_extensions: [".key", ".pem", ".env"]
 ```
 
-**Audit Logging** (OpenClaw doesn't have this):
+**Audit Logging** (OpenClaw lacks a per-tool-call query surface):
 - Append-only JSONL: `{timestamp, tool, action, decision, reason}`
 - Simple queries: `safetyclawz audit --blocked --last-24h`
 - No complex risk scores in V1—just "allowed per policy" or "blocked (rate limit)" or "blocked (not in allowlist)"
@@ -411,8 +415,8 @@ export default function (api) {
 
 **Now Include:**
 - **Heuristic risk scorer** - Weighted formula: `0.30×external + 0.20×sensitive_tool + 0.20×(1-confidence) + 0.15×chain_depth + 0.15×data_classification`
-- **Risk-based decisions** - APPROVE / **REQUIRE_APPROVAL** / SIMULATE / BLOCK (adds human-in-loop)
-- **Approval workflows** - Interactive prompts: "About to delete 47 files recursively in src/tests/ — APPROVE or DENY?"
+- **Risk-based decisions** - ALLOW / **REQUIRE_APPROVAL** / SIMULATE / BLOCK (adds human-in-loop)
+- **Approval workflows** - Interactive prompts: "About to delete 47 files recursively in src/tests/ — ALLOW or DENY?"
 - **SIMULATE mode** - Dry-run capability (describe impact without executing)
 - **Pluggable risk scorers** - Architecture supporting custom scoring logic (ML models, external services)
 
@@ -585,7 +589,7 @@ rules:
 **Acceptance Criteria**:
 - Rules evaluated top-to-bottom in YAML file order
 - First matching rule determines decision
-- If no rules match, default policy applies (configurable: APPROVE or REQUIRE_APPROVAL)
+- If no rules match, default policy applies (configurable: ALLOW or REQUIRE_APPROVAL)
 - Rule evaluation order must be deterministic and documented
 
 ---
@@ -723,7 +727,7 @@ Reason: CRITICAL threshold (>0.8) exceeded
 **Description**: For REQUIRE_APPROVAL decisions, system shall support configurable approval workflows (synchronous prompt, async notification, multi-party approval).
 
 **Acceptance Criteria**:
-- V1: Synchronous CLI prompt (blocking)
+- Growth: Synchronous CLI prompt (blocking)
 - Growth: Webhook notification to external approval service
 - Growth: Multi-party approval (2-of-3 approvers required)
 - Timeout configuration (auto-BLOCK after X seconds)
@@ -811,7 +815,7 @@ const result = await wrappedBashTool.exec("rm -rf /tmp/test");
   "action_request": { /* ActionRequest object */ },
   "risk_assessment": { /* RiskAssessment object */ },
   "decision": { /* Decision object */ },
-  "action_receipt": { /* execution result, if APPROVED */ }
+  "action_receipt": { /* execution result, if ALLOWED */ }
 }
 ```
 
@@ -990,15 +994,15 @@ Non-functional requirements define quality attributes and constraints.
 ## 7.2 Usability
 
 ### NFR-UX-001: Approval Request Clarity
-**Priority**: Must Have (MVP)  
-**Source**: UJ-003
+**Priority**: Should Have (Growth Phase)  
+**Source**: UJ-003 (Growth)
 
 **Description**: When approval required, user must clearly understand what they're approving and why.
 
 **Acceptance Criteria**:
 - Approval prompt shows: tool name, arguments (truncated if long), risk score, risk factors, decision reason
 - Estimated impact displayed (e.g., "Will delete 47 files recursively")
-- Clear APPROVE / DENY options
+- Clear ALLOW / DENY options
 - No security jargon (e.g., "PHI" expanded to "Protected Health Information")
 
 **Example Prompt**:
@@ -1057,7 +1061,7 @@ Valid variables: risk_score, external_communication, tool,
 **Description**: System failures must default to safe state (block execution) rather than fail-open.
 
 **Acceptance Criteria**:
-- Policy load failure → default to BLOCK or REQUIRE_APPROVAL (configurable, never APPROVE)
+- Policy load failure → default to BLOCK (V1) or REQUIRE_APPROVAL (Growth, configurable), never ALLOW
 - Risk scorer crash → default to risk_score=1.0 (maximum risk)
 - Audit log write failure → block execution (do not proceed without logging)
 - Network timeout (middleware mode) → BLOCK decision after 5s timeout
@@ -1198,7 +1202,7 @@ Valid variables: risk_score, external_communication, tool,
 | Category | Must Have (MVP) | Should Have (Growth) |
 |----------|-----------------|----------------------|
 | Performance | NFR-PERF-001, NFR-PERF-002 | NFR-PERF-003 |
-| Usability | NFR-UX-001, NFR-UX-002 | |
+| Usability | NFR-UX-002 | NFR-UX-001 |
 | Reliability | NFR-REL-001, NFR-REL-002, NFR-REL-003 | |
 | Security | NFR-SEC-002, NFR-SEC-003 | NFR-SEC-001 |
 | Maintainability | NFR-MAINT-002 | NFR-MAINT-001 |
@@ -1468,7 +1472,7 @@ All in a standardized ActionRequest object.
 
 ---
 
-## 13.2 Risk Engine (V1 Heuristic Model)
+## 13.2 Risk Engine (Growth Phase)
 
 Weighted scoring model:
 
@@ -1490,14 +1494,27 @@ Outputs:
 
 Must be explainable.
 
-No black-box scoring in V1.
+No black-box scoring in Growth.
 
 ---
 
 ## 13.3 Policy Engine
 
-YAML-based, human-readable rules:
+V1 uses simple safeguards per tool type. Growth adds conditional rules.
 
+**V1 Example (Safeguards)**:
+```yaml
+safeguards:
+  messaging:
+    rate_limit: 10/hour
+    allowed_contacts: ["+14155551212"]
+  exec:
+    mode: allowlist
+    allowed_commands: ["git", "npm"]
+    blocked_paths: ["~/.ssh", "/etc"]
+```
+
+**Growth Example (Conditional Rules)**:
 ```yaml
 rules:
   - name: block_high_risk_external
@@ -1517,10 +1534,13 @@ Policy evaluation must be deterministic.
 
 Returns:
 
-* APPROVE
+* ALLOW
+* BLOCK
+
+Growth Phase additions:
+
 * REQUIRE_APPROVAL
 * SIMULATE
-* BLOCK
 
 Includes policy rule triggered and reason.
 
@@ -1589,9 +1609,9 @@ Returns structured decision.
 
 # 15. OpenClaw Use Case
 
-**Context**: OpenClaw is a massively popular open-source personal AI assistant (202k+ GitHub stars) with powerful tool access (exec, messaging, file operations, 49+ skills). It has manual approval prompts but lacks automated enforcement of rate limits, contact allowlists, and secret redaction.
+**Context**: OpenClaw is an open-source personal AI assistant with powerful tool access (exec, messaging, file operations). It has manual approval prompts for exec but lacks automated enforcement of rate limits, outbound recipient allowlists, and secret redaction across tool types.
 
-**OpenClaw Security Infrastructure**: OpenClaw provides comprehensive security **knowledge** (MITRE ATLAS threat model, dangerous tools list, malicious code scanner, prompt injection detection) but lacks runtime **enforcement** (audit is informational, not preventative). SafetyClawz bridges this gap by adding fail-closed policy enforcement to Trust Boundary 3 (Tool Execution).
+**OpenClaw Security Infrastructure**: OpenClaw provides comprehensive security **knowledge** (MITRE ATLAS threat model, dangerous tools list, malicious code scanner, prompt injection detection) and runtime enforcement hooks (tool policies, `before_tool_call`), plus channel-level inbound allowlists. It lacks unified parameter-level policy for tool calls and a dedicated per-tool-call audit query surface. SafetyClawz bridges this gap by adding fail-closed policy enforcement for tool parameters within Trust Boundary 3 (Tool Execution).
 
 **Reference**: See [OpenClaw-Security-Analysis.md](./OpenClaw-Security-Analysis.md) and [Architecture-V1.md](./Architecture-V1.md) for detailed MITRE ATLAS threat model alignment.
 
@@ -1657,7 +1677,7 @@ export default function (api) {
 - ✅ Aligns with MITRE ATLAS threat model (industry-standard AI security framework)
 - ✅ Uses OpenClaw's production-validated dangerous tools list as baseline
 - ✅ Adds runtime enforcement to OpenClaw's detection-only security audit
-- ✅ Unified YAML policy across all 49+ skills
+- ✅ Unified YAML policy across tool types and skills
 
 This demonstrates how AI agents with broad tool access require execution firewalls.
 

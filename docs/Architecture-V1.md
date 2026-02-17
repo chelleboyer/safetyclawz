@@ -5,6 +5,10 @@
 **Status**: Draft  
 **Scope**: MVP (Months 1-6)
 
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
+
 ---
 
 ## 1. System Overview
@@ -70,11 +74,13 @@ SafetyClawz V1 is an **OpenClaw plugin** that enforces YAML-based policies on ag
 
 ### 1.2 MITRE ATLAS Integration
 
-OpenClaw's security architecture follows **MITRE ATLAS** (documented in `docs/security/THREAT-MODEL-ATLAS.md`), which defines 3 trust boundaries:
+OpenClaw's security architecture follows **MITRE ATLAS** (documented in `src/openclaw/docs/security/THREAT-MODEL-ATLAS.md`), which defines 5 trust boundaries:
 
 1. **Channel Access** - Device pairing, authentication, allowlists
 2. **Session Isolation** - Session keys, tool policies, audit logging
 3. **Tool Execution** - Sandboxing, exec-approvals, SSRF protection
+4. **External Content** - Content wrapping, security notices
+5. **Supply Chain** - Skill publishing, moderation
 
 **SafetyClawz's Role**: Adds **runtime policy enforcement** to Trust Boundary 3 (Tool Execution).
 
@@ -83,10 +89,10 @@ OpenClaw's security architecture follows **MITRE ATLAS** (documented in `docs/se
 | **Prompt Injection → RCE** | Detection via `external-content.ts` | **Block** dangerous exec patterns |
 | **Credential Theft** | Audit logging | **Redact** secrets from logs |
 | **Data Exfiltration** | Skill scanner flags suspicious network | **Rate limit** API calls |
-| **Lateral Movement** | Session isolation | **Allowlist** messaging contacts |
+| **Lateral Movement** | Session isolation | **Outbound recipient allowlists** for messaging |
 | **Privilege Escalation** | Exec allowlist approval | **Block** sudo/elevated commands |
 
-**Key Insight**: OpenClaw has the **knowledge** (dangerous tools list, threat model, code scanner). SafetyClawz adds **enforcement** (fail-closed blocking at runtime).
+**Key Insight**: OpenClaw has strong security knowledge and existing enforcement hooks, plus coarse tool governance (profiles, allow/deny lists, provider-specific narrowing) and channel-level inbound allowlists, but lacks a unified, cross-tool policy layer for tool-call parameters. SafetyClawz adds that enforcement and audit surface.
 
 **Reference**: See [OpenClaw-Security-Analysis.md](./OpenClaw-Security-Analysis.md) for detailed MITRE ATLAS alignment.
 
@@ -301,7 +307,7 @@ export class PolicyEngine {
     
     const to = params.to || params.recipient || params.channel || '';
     
-    // Check contact allowlist
+    // Check outbound recipient allowlist
     if (msgPolicy.allowed_contacts) {
       const isAllowed = msgPolicy.allowed_contacts.some(allowed => 
         to.includes(allowed) || allowed === to
@@ -774,9 +780,11 @@ safetyclawz audit --json | jq '.[] | select(.decision.decision == "BLOCK")'
 ### 8.2 Graceful Degradation
 
 **Non-critical errors continue**:
-- Audit log write fails → Log to console, continue enforcement
 - Secret redaction error → Log warning, redact entire result
 - Rate limiter cleanup error → Log warning, continue enforcement
+
+**Audit logging is critical in V1**:
+- Audit log write fails → BLOCK (do not proceed without logging)
 
 ---
 
@@ -907,7 +915,7 @@ This aligns with MITRE ATLAS's emphasis on **detection, prevention, and response
 - [ ] Unit tests (90%+ coverage)
 
 ### Sprint 3 (Week 5-6): Messaging & Files
-- [ ] Contact allowlist evaluator
+- [ ] Outbound recipient allowlist evaluator
 - [ ] Channel allowlist evaluator
 - [ ] File path blocklist evaluator
 - [ ] Rate limiter implementation

@@ -3,12 +3,16 @@
 **Date**: 2026-02-16  
 **Purpose**: Learn how to test SafetyClawz without OpenClaw installation
 
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
+
 ---
 
-## Key Discovery: 1,005+ Test Files
+## Key Discovery: 1,144+ Test Files
 
 OpenClaw has comprehensive test coverage:
-- **src/openclaw/src/**: 1,005 `.test.ts` files
+- **src/openclaw/src/**: 1,144 `.test.ts` files
 - **Test framework**: Vitest
 - **Test types**: Unit tests, E2E tests, integration tests
 
@@ -72,7 +76,7 @@ vi.mock("../plugins/hook-runner-global.js", () => ({
 
 ### Pattern 2: How Blocking Works
 
-From `pi-tools.before-tool-call.ts` (lines 78-82):
+From `pi-tools.before-tool-call.ts` (lines 29-52):
 
 ```typescript
 const outcome = await runBeforeToolCallHook({ toolName, params, toolCallId, ctx });

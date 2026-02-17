@@ -2,7 +2,10 @@
 # Copy to ~/.safetyclawz/policy.yaml to use
 #
 # INTEGRATION: This policy leverages OpenClaw's built-in security knowledge
-# Source: src/openclaw/src/security/dangerous-tools.ts
+# Sources:
+# - src/openclaw/src/security/dangerous-tools.ts (tool risk baseline)
+# - src/openclaw/src/security/skill-scanner.ts (exec pattern ideas)
+# - src/openclaw/src/security/audit.ts (sensitive path ideas)
 # OpenClaw's dangerous tools: exec, spawn, shell, sessions_spawn, sessions_send,
 #                              gateway, fs_write, fs_delete, fs_move, apply_patch
 

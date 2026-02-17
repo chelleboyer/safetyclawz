@@ -2,21 +2,25 @@
 
 **Date**: 2026-02-16  
 **Purpose**: Comprehensive inventory of OpenClaw codebase for SafetyClawz integration  
-**Repository**: `C:\code\safety_claws\src\openclaw` (202k+ GitHub stars, verified Feb 2026)
+**Repository**: `C:\code\safety_claws\src\openclaw`
+
+## Sources
+
+- [Appendix-OpenClaw-Docs.md](Appendix-OpenClaw-Docs.md)
 
 ---
 
 ## Executive Summary
 
 OpenClaw is a **massively comprehensive** AI agent platform with:
-- **1,005+ test files** (90%+ coverage)
-- **Extensive documentation** (~200+ markdown files, i18n in Japanese + Chinese)
+- **1,144+ test files** (large automated test suite)
+- **Extensive documentation** (600+ markdown files, i18n in Japanese + Chinese)
 - **Complete security infrastructure** (MITRE ATLAS threat model, audit CLI, code scanner)
 - **Production-ready architecture** (multi-agent, multi-channel, sandboxing, gateway)
 - **21 security-specific files** in src/security/
 - **60+ source directories** covering agents, channels, tools, plugins, gateway, etc.
 
-**Key Discovery for SafetyClawz**: OpenClaw has the **security knowledge** (dangerous tools list, threat model, code scanner) but lacks **runtime enforcement** (no policy-based blocking of tool calls). This is SafetyClawz's value proposition.
+**Key Discovery for SafetyClawz**: OpenClaw has strong security knowledge (dangerous tools list, threat model, code scanner) and **does enforce** tool blocking via `before_tool_call` plus tool profiles and allow/deny policies (including provider-specific narrowing), with channel-level inbound allowlists. The gap is **unified, cross-tool policy for tool-call parameters** (rate limits, outbound recipient allowlists, path rules) and a dedicated per-tool-call audit query surface. This is SafetyClawz's value proposition.
 
 ---
 
@@ -29,13 +33,13 @@ src/openclaw/
 ├── .pi/, .vscode/           # Runtime/IDE configs
 ├── apps/                    # Platform-specific apps (macOS)
 ├── assets/                  # Static assets
-├── docs/                    # **200+ markdown documentation files**
+├── docs/                    # **600+ markdown documentation files**
 ├── extensions/              # Plugin extensions (BlueBubbles, Feishu, etc.)
 ├── git-hooks/               # Git pre-commit hooks
 ├── packages/                # Monorepo packages
 ├── patches/                 # npm patches
 ├── scripts/                 # Build/maintenance scripts
-├── skills/                  # **49+ installable skills**
+├── skills/                  # **50+ installable skills**
 ├── src/                     # **Main source code (60+ directories)**
 ├── Swabble/                 # Swabble integration
 ├── test/                    # E2E test fixtures
@@ -52,7 +56,7 @@ src/openclaw/
 
 ```
 src/
-├── agents/                  # Agent runtime, tools, policies (1,005+ tests)
+├── agents/                  # Agent runtime, tools, policies (1,144+ tests)
 │   ├── pi-tools.before-tool-call.ts   # **CRITICAL**: Hook wrapper (blocks execution)
 │   ├── pi-tools.ts          # Core tools registration
 │   ├── tool-policy.ts       # Tool policy engine
@@ -209,7 +213,7 @@ docs/
 
 #### **THREAT-MODEL-ATLAS.md** (604 lines)
 - MITRE ATLAS framework-based threat model
-- 4 trust boundaries documented
+- 5 trust boundaries documented
 - Attack chains for prompt injection, RCE, credential theft
 - Integration with MITRE's industry-standard AI security framework
 
@@ -219,6 +223,8 @@ Trust Boundaries:
 1. Channel Access (device pairing, allowlists, auth)
 2. Session Isolation (session keys, tool policies, logging)
 3. Tool Execution (sandbox, exec-approvals, SSRF protection)
+4. External Content (wrapping, security notices)
+5. Supply Chain (ClawHub skill publishing)
 ```
 
 #### **docs/security/README.md**
@@ -295,9 +301,9 @@ Documents OpenClaw's exec tool (shell command execution):
 
 ## 4. Skills Ecosystem (`skills/`)
 
-### 49+ Installable Skills
+### 50+ Installable Skills
 
-OpenClaw has **49 built-in skills** (modular npm packages):
+OpenClaw has **51 built-in skills** (modular npm packages):
 
 **Examined** (SafetyClawz research):
 - **imsg**: iMessage/SMS CLI ("Confirm recipient + message before sending")
@@ -319,11 +325,11 @@ OpenClaw has **49 built-in skills** (modular npm packages):
 
 ## 5. Testing Infrastructure
 
-### Test Coverage: 1,005+ Test Files
+### Test Coverage: 1,144+ Test Files
 
 ```
 Distribution:
-├── src/**/*.test.ts         # 1,005 unit tests
+├── src/**/*.test.ts         # 1,144 unit tests
 ├── test/**/*.test.ts        # 4 E2E tests
 └── extensions/**/*.test.ts  # Extension tests
 
@@ -391,7 +397,7 @@ Each extension follows plugin pattern with:
 
 ```
 ├── vitest.config.ts         # Main test config
-├── vitest.unit.config.ts    # Unit tests (pool=forks, 1,005 files)
+├── vitest.unit.config.ts    # Unit tests (pool=forks, 1,144 files)
 ├── vitest.e2e.config.ts     # E2E tests
 ├── vitest.extensions.config.ts  # Extension tests
 ├── vitest.gateway.config.ts # Gateway tests
@@ -488,13 +494,13 @@ Each extension follows plugin pattern with:
 
 | Feature | SafetyClawz V1 | Why Missing from OpenClaw |
 |---------|----------------|---------------------------|
-| Runtime policy enforcement | ✅ `before_tool_call` blocking | Audit is informational only |
+| Unified parameter-level policy | ✅ YAML rules for tool parameters | No cross-tool parameter policy (channel allowlists exist) |
 | Declarative YAML policies | ✅ User-configurable rules | Hard-coded constants |
 | Rate limiting | ✅ Per-tool frequency limits | No call tracking |
-| Contact allowlists | ✅ Messaging safeguards | No recipient filtering |
+| Outbound recipient allowlists | ✅ Messaging safeguards | Inbound allowlists exist, but no outbound recipient filtering |
 | Path blocklists | ✅ Exec/file path protection | Allowlist exists, no blocklist |
-| JSONL audit trail | ✅ Per-call queryable logs | Security report only, not per-call |
-| Fail-closed enforcement | ✅ Block on policy violation | Audit doesn't prevent actions |
+| JSONL audit trail | ✅ Per-call queryable logs | Transcripts exist, but no query CLI |
+| Fail-closed parameter enforcement | ✅ Block on policy violation | No unified parameter enforcement |
 
 ---
 
@@ -506,17 +512,16 @@ Each extension follows plugin pattern with:
 Source Code:
 - 60+ directories in src/
 - 21 security-specific files
-- 1,005+ test files
-- 90%+ test coverage
+- 1,144+ test files
 
 Documentation:
-- ~200+ markdown files
+- ~600+ markdown files
 - 850-line security guide
 - 604-line threat model
 - Full i18n (Japanese + Chinese)
 
 Skills Ecosystem:
-- 49+ built-in skills
+- 50+ built-in skills
 - npm-based distribution
 - Progressive disclosure patterns
 
@@ -553,16 +558,14 @@ OpenClaw has **production-grade security infrastructure**:
 - Filesystem permission auditing
 
 ### 2. **Plugin Architecture is Proven**
-- 202k+ stars validates the design
 - Hook system (`before_tool_call`/`after_tool_call`) is battle-tested
 - npm distribution works at scale
 - Plugin manifest system is well-documented
 
-### 3. **Security is Informational, Not Preventative**
-- `openclaw security audit` **detects** issues but doesn't **block** them
-- Audit runs on-demand, not per-execution
-- No runtime policy enforcement layer
-- **This is SafetyClawz's primary value proposition**
+### 3. **Audit is Informational, Not Per-Execution**
+- `openclaw security audit` **detects** issues but doesn't run per tool invocation
+- Audits are on-demand and separate from tool execution
+- OpenClaw already supports `before_tool_call` blocking; SafetyClawz adds parameter-level policies and audit querying
 
 ### 4. **Dangerous Tools List is Production-Validated**
 `DANGEROUS_ACP_TOOL_NAMES` represents **real incidents**:
@@ -574,7 +577,7 @@ OpenClaw has **production-grade security infrastructure**:
 SafetyClawz should start with this baseline.
 
 ### 5. **Skills Show Real-World Patterns**
-Examining 6 of 49 skills revealed:
+Examining 6 of 50+ skills revealed:
 - **Manual approval emphasized** (imsg: "confirm before sending")
 - **Secret handling caution** (1password: requires tmux, never paste)
 - **Progressive disclosure** (skill-creator: "concise is key")
@@ -582,16 +585,16 @@ Examining 6 of 49 skills revealed:
 These patterns inform SafetyClawz's threat model.
 
 ### 6. **Testing Infrastructure is Mature**
-1,005+ test files with:
+1,144+ test files with:
 - Mock-first architecture (no OpenClaw installation needed)
 - Hook testing patterns we've copied
 - E2E/unit/integration/live test separation
-- 90%+ coverage
+- (coverage not asserted here)
 
 SafetyClawz can follow the same patterns.
 
 ### 7. **Documentation is Exhaustive**
-~200 markdown files covering:
+~600 markdown files covering:
 - Architecture and concepts
 - Security and threat modeling
 - Tool and plugin development
@@ -600,12 +603,14 @@ SafetyClawz can follow the same patterns.
 This enables deep integration without guessing.
 
 ### 8. **Gateway Security Model is Sophisticated**
-3 trust boundaries:
+5 trust boundaries:
 1. **Channel Access** - Device pairing, allowlists, auth
 2. **Session Isolation** - Session keys, tool policies, logging
 3. **Tool Execution** - Sandbox, exec-approvals, SSRF protection
+4. **External Content** - Wrapping, security notices
+5. **Supply Chain** - Skill publishing, moderation
 
-SafetyClawz adds a **4th boundary**: Runtime policy enforcement.
+SafetyClawz adds **runtime policy enforcement** inside Trust Boundary 3.
 
 ---
 
@@ -648,19 +653,19 @@ SafetyClawz adds a **4th boundary**: Runtime policy enforcement.
 ### OpenClaw Repository Inventory
 
 - **Source**: 60+ directories, 100,000+ lines of code
-- **Documentation**: ~200 markdown files, MITRE ATLAS threat model
-- **Tests**: 1,005+ test files, 90%+ coverage
+- **Documentation**: ~600 markdown files, MITRE ATLAS threat model
+- **Tests**: 1,144+ test files
 - **Security**: 21 files, audit CLI, code scanner, prompt injection detection
-- **Skills**: 49+ npm packages
+- **Skills**: 50+ npm packages
 - **Extensions**: 5+ built-in plugins
 - **Channels**: WhatsApp, Telegram, Discord, Slack, Signal, LINE, iMessage
 - **Deployment**: Docker, Fly.io, Render, VPS guides
-- **Community**: 202k+ GitHub stars, active development
+- **Community**: Active development (verify external popularity metrics before publishing)
 
 ### SafetyClawz Positioning
 
-**OpenClaw has**: Security knowledge, threat model, code scanner, audit system
-**OpenClaw lacks**: Runtime enforcement, declarative policies, fail-closed blocking
+**OpenClaw has**: Security knowledge, threat model, code scanner, audit system, `before_tool_call` blocking, tool allow/deny policies
+**OpenClaw lacks**: Unified, cross-tool policy for tool-call parameters (rate limits, outbound recipient allowlists, path rules) and a dedicated per-tool-call audit query UI
 
 **SafetyClawz fills the gap**: Plugin-based runtime policy enforcement using OpenClaw's own hook system.
 
@@ -678,6 +683,6 @@ SafetyClawz adds a **4th boundary**: Runtime policy enforcement.
 
 **Files Created**:
 1. [OpenClaw-Integration-Research.md](./OpenClaw-Integration-Research.md) - Plugin hook discovery
-2. [OpenClaw-Test-Patterns.md](./OpenClaw-Test-Patterns.md) - Testing strategy from 1,005 tests
+2. [OpenClaw-Test-Patterns.md](./OpenClaw-Test-Patterns.md) - Testing strategy from 1,144 tests
 3. [OpenClaw-Security-Analysis.md](./OpenClaw-Security-Analysis.md) - Security infrastructure deep-dive
 4. **[OpenClaw-Repo-Inventory.md]** (This file) - Complete repository inventory
