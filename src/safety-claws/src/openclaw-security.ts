@@ -71,10 +71,11 @@ export const DANGEROUS_EXEC_PATTERNS = [
   ':(){ :|:& };:',
   
   // Piped execution (common in supply-chain attacks)
-  'curl.*| sh',
-  'curl.*| bash',
-  'wget.*| sh',
-  'wget.*| bash',
+  // These are regex patterns matched by matchesPattern() in index.ts
+  'curl\\b.*\\|\\s*sh',
+  'curl\\b.*\\|\\s*bash',
+  'wget\\b.*\\|\\s*sh',
+  'wget\\b.*\\|\\s*bash',
   
   // System modification
   'chmod 777',

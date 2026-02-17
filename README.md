@@ -94,7 +94,7 @@ See [Architecture-V1.md](docs/Architecture-V1.md) for complete roadmap.
 ### Prerequisites
 
 - **OpenClaw** installed ([installation guide](https://openclaw.com/install))
-- **Node.js** 18+ (OpenClaw requirement)
+- **Node.js** 22+ (OpenClaw requirement)
 - **Git** (for cloning this repo)
 
 ### Install from Source

@@ -2,6 +2,12 @@
 
 - Repo: https://github.com/chelleboyer/safetyclawz
 
+> **Note — MVP vs. Vision**: This document describes the *full* SafetyClawz integration
+> model. The current **prototype (v0.1.0)** implements a subset: exec-tool blocking via
+> `before_tool_call` / `after_tool_call` hooks with YAML-driven blocklists. Features such
+> as SIMULATE, REQUIRE_APPROVAL, model_confidence scoring, chain_depth tracking, and
+> data_classification are planned for Growth/V1 milestones.
+
 ## Execution Firewall for OpenClaw Runtimes
 
 This document defines how OpenClaw-based agents must integrate with SafetyClawz.

@@ -196,14 +196,16 @@ npm run test:debug
 
 ### Audit Log Viewer
 
-**CLI Tool**: `safetyclawz-audit` (future - bin/audit.ts exists, JSONL logging not in prototype)
+**CLI Tool**: `safetyclawz-audit` (bin/audit.ts reads from `~/.safetyclawz/audit.jsonl`)
 
-Planned features:
+Features:
 - `safetyclawz-audit --tail` - Follow audit log in real-time
 - `safetyclawz-audit --last 10` - Show recent 10 entries
 - `safetyclawz-audit --blocked` - Filter blocked actions only
 
-**Audit Log Format** (JSONL, V1 target):
+Audit logging can be disabled by setting `SAFETYCLAWZ_AUDIT=false`.
+
+**Audit Log Format** (JSONL):
 ```json
 {
   "timestamp": "2026-02-16T12:34:56.789Z",
@@ -292,14 +294,15 @@ safeguards:
 | Feature | Prototype | V1 Full |
 |---------|-----------|---------|
 | Exec blocklists | ✅ Yes | ✅ Yes |
+| Regex pattern matching | ✅ Yes | ✅ Yes |
+| JSONL audit logs | ✅ Yes | ✅ Yes |
 | Exec allowlists | ❌ No | ✅ Yes |
 | Messaging rate limits | ❌ No | ✅ Yes |
 | File path protection | ❌ No | ✅ Yes |
 | Outbound recipient allowlists | ❌ No | ✅ Yes |
-| JSONL audit logs | ❌ No (console only) | ✅ Yes |
 | Secret redaction | ❌ No | ✅ Yes |
 | CLI tool | ❌ No | ✅ Yes (`safetyclawz init`) |
-| Unit tests | ❌ No | ✅ 90%+ coverage |
+| Unit tests | ✅ Yes (20+ tests) | ✅ 90%+ coverage |
 | Performance | ~10ms overhead | <50ms P95 |
 
 ---
@@ -309,10 +312,11 @@ safeguards:
 ### ✅ Confirmed Working
 1. **before_tool_call CAN block**: Returning `{ block: true }` prevents execution
 2. **Policy YAML parsing**: Loads custom policies from `~/.safetyclawz/policy.yaml`
-3. **Pattern matching works**: Regex-free simple string matching (fast)
+3. **Pattern matching works**: Supports both literal substring and regex patterns
 4. **Fail-safe defaults**: No policy file → uses hard-coded safe defaults
 5. **OpenClaw security integration**: Leverages OpenClaw security patterns and hooks
 6. **Zero OpenClaw modifications**: Pure plugin API usage
+7. **JSONL audit logging**: Append-only audit trail at `~/.safetyclawz/audit.jsonl`
 
 ### 📊 Performance
 
@@ -333,11 +337,11 @@ This prototype validates the **core technical assumption** of SafetyClawz V1:
 
 ## Known Limitations
 
-1. **No regex patterns**: Uses simple `.includes()` matching (V1 adds regex)
-2. **Exec-only**: Only protects exec tool (V1 adds messaging, files)
-3. **No rate limiting**: Doesn't track call frequency (V1 adds rate limiter)
-4. **Console logging only**: No persistent audit logs (V1 adds JSONL)
-5. **Hard-coded TypeScript types**: No runtime schema validation (V1 adds Zod/AJV)
+1. **Exec-only**: Only protects exec tool (V1 adds messaging, files)
+2. **No rate limiting**: Doesn't track call frequency (V1 adds rate limiter)
+3. **Hard-coded TypeScript types**: No runtime schema validation (V1 adds Zod/AJV)
+4. **No secret redaction**: Audit logs may contain sensitive params (V1 adds redaction)
+5. **No audit log rotation**: Single file grows unbounded (V1 adds rotation)
 
 ---
 

@@ -847,17 +847,17 @@ describe('SafetyClawz OpenClaw Integration', () => {
 
 ### 10.1 MITRE ATLAS Threat Model Alignment
 
-SafetyClawz mitigations map directly to **MITRE ATLAS** techniques:
+SafetyClawz mitigations map directly to **MITRE ATLAS** techniques (IDs from OpenClaw's `THREAT-MODEL-ATLAS.md`):
 
 #### Trust Boundary 3: Tool Execution (SafetyClawz Focus)
 
 | ATLAS Technique | Threat | SafetyClawz Mitigation |
 |----------------|--------|------------------------|
-| **AML.T0043** - Model Inversion | Extract training data via tool abuse | Block file reads from protected paths (`~/.openclaw/agents/`) |
-| **AML.T0054** - LLM Prompt Injection | Malicious commands via user input | Block dangerous exec patterns (e.g., `rm -rf /`, `curl \| bash`) |
-| **AML.T0048** - Exfiltration via Tool | Data theft via messaging/web tools | Rate limit messaging, allowlist contacts |
-| **AML.T0020** - Backdoor via Tool | Persistent access via cron/startup | Block writes to `~/.bashrc`, `/etc/cron.d/` |
-| **AML.T0042** - Model Poisoning | Modify agent skill files | Block writes to `~/.openclaw/skills/` |
+| **AML.T0051.000** - LLM Prompt Injection: Direct | Malicious commands via user input | Block dangerous exec patterns (e.g., `rm -rf /`, `curl \| bash`) |
+| **AML.T0051.001** - LLM Prompt Injection: Indirect | Injected instructions in fetched content trigger tool abuse | Block dangerous exec patterns; path-based blocking for sensitive files |
+| **AML.T0043** - Craft Adversarial Data | Obfuscated commands that bypass approval allowlists | Block known-dangerous patterns, normalize commands before matching |
+| **AML.T0009** - Collection | Data theft via messaging/web tools | Rate limit messaging, allowlist contacts |
+| **AML.T0010.001** - Supply Chain Compromise: AI Software | Malicious skill modifies agent files | Block writes to `~/.openclaw/skills/`, `~/.bashrc`, `/etc/cron.d/` |
 
 #### Fail-Closed Enforcement
 

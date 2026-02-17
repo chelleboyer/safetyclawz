@@ -28,10 +28,11 @@ safeguards:
       - ":(){ :|:& };:"      # Fork bomb
       
       # Piped execution (supply-chain attack vector)
-      - "curl.*| sh"         # Pipe to shell
-      - "curl.*| bash"       # Pipe to bash
-      - "wget.*| sh"         # Pipe to shell
-      - "wget.*| bash"       # Pipe to bash
+      # These are regex patterns - matched via RegExp in the plugin
+      - "curl\\b.*\\|\\s*sh"    # Pipe to shell
+      - "curl\\b.*\\|\\s*bash"  # Pipe to bash
+      - "wget\\b.*\\|\\s*sh"    # Pipe to shell
+      - "wget\\b.*\\|\\s*bash"  # Pipe to bash
       
       # System modification
       - "chmod 777"          # Overly permissive

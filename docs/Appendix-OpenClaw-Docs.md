@@ -11,7 +11,7 @@ These pages are the primary public references used to align SafetyClawz docs wit
 
 - https://docs.openclaw.ai/tools
   - Tool policy surface (`tools.allow`, `tools.deny`, `tools.profile`, `tools.byProvider`, tool groups).
-  - Tool inventory and parameters (`exec`, `process`, `browser`, `message`, `gateway`, etc.).
+  - Tool inventory and parameters (`exec`, `process`, `browser`, `gateway`, `bash`, `read`, `write`, `edit`, etc.).
 
 ## Elevated Mode
 

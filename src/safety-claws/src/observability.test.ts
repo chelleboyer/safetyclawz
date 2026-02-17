@@ -31,6 +31,9 @@ describe('Observability Demo', () => {
       registerHook: (hookName: string, handler: Function) => {
         hooks[hookName].push(handler);
       },
+      on: (hookName: string, handler: Function) => {
+        hooks[hookName].push(handler);
+      },
     };
 
     // Initialize plugin
