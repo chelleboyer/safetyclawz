@@ -26,7 +26,7 @@
 
 SafetyClawz is an **OpenClaw plugin** that adds runtime policy enforcement to your AI agents. It intercepts tool calls **before** they execute, evaluates them against your safety rules, and either allows or blocks them.
 
-**Built for [OpenClaw](https://github.com/openclaw/openclaw)** - open-source personal AI assistant (verify external popularity metrics before publishing).
+**Built for [OpenClaw](https://github.com/openclaw/openclaw)** - open-source personal AI assistant.
 
 ### The Problem
 
