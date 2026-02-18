@@ -3,7 +3,7 @@
 **Runtime Safety Layer for Customer-Facing Humanoid Robots**
 
 [![Reachy Mini](https://img.shields.io/badge/Robot-Reachy_Mini-blue.svg)](https://www.pollen-robotics.com/)
-[![SafetyClawz](https://img.shields.io/badge/SafetyClawz-Enabled-green.svg)](https://github.com/yourusername/safety_claws)
+[![SafetyClawz](https://img.shields.io/badge/SafetyClawz-Enabled-green.svg)](https://github.com/chelleboyer/safetyclawz)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://github.com/openclaw/openclaw)
 
 ---
@@ -22,8 +22,8 @@ SafetyClawz provides a **runtime execution firewall** between your OpenClaw-powe
 
 Your Reachy Mini retail assistant running on OpenClaw can:
 
-- 🤖 **Move physically** - arms, head, torso articulation
-- 💬 **Interact with customers** - voice, gestures, screen display
+- 🤖 **Move physically** - head turns, antenna movements, display animations
+- 💬 **Interact with customers** - voice, expressive head/antenna movements, screen display
 - 📦 **Access inventory systems** - product databases, stock levels
 - 💳 **Handle transactions** - price lookups, payment processing
 - 📊 **Query business data** - sales reports, customer records
@@ -32,7 +32,7 @@ Your Reachy Mini retail assistant running on OpenClaw can:
 
 **Without safety controls, AI reasoning errors could cause:**
 
-- ⚠️ **Dangerous movements** near customers (collision risk)
+- ⚠️ **Erratic movements** near customers (head/antenna jerking, customer discomfort)
 - 📨 **Customer data leaks** (PII exposure in logs)
 - 💣 **System corruption** (`rm -rf` on inventory database)
 - 📧 **Spam attacks** (mass emails to customer contact lists)
@@ -117,19 +117,34 @@ description: "Runtime safety controls for customer-facing humanoid robot"
 # PHYSICAL SAFETY - Movement Controls
 # ═══════════════════════════════════════════════════════════
 movement:
-  max_velocity: 0.3  # m/s - safe customer approach speed
-  restricted_zones:
-    - name: customer_personal_space
-      radius_meters: 0.5
-      action: BLOCK  # Never enter customer personal space
+  max_velocity: 0.2  # rad/s - safe head/antenna movement speed
   
+  # Reachy Mini has: torso (stationary), head (pan/tilt), antennas (expressive)
   joint_limits:
-    - joint: arm_right_shoulder
-      max_angle: 90  # Prevent overhead reaching
+    - joint: head_pan
+      max_angle: 120  # Left-right head turn
+      min_angle: -120
+      max_velocity: 0.3  # rad/s
+    
+    - joint: head_tilt
+      max_angle: 30  # Up tilt
+      min_angle: -30  # Down tilt
+      max_velocity: 0.2  # rad/s
+    
+    - joint: antenna_left
+      max_angle: 45  # Expressive antenna movement
       min_angle: -45
-    - joint: arm_left_shoulder
-      max_angle: 90
+      max_velocity: 0.5  # rad/s (can be faster for expressiveness)
+    
+    - joint: antenna_right
+      max_angle: 45
       min_angle: -45
+      max_velocity: 0.5  # rad/s
+  
+  # Prevent jarring movements that startle customers
+  acceleration_limits:
+    max_acceleration: 0.5  # rad/s² - smooth, non-threatening movements
+    smoothing: true  # Apply motion smoothing for natural feel
 
 # ═══════════════════════════════════════════════════════════
 # BLOCKED COMMANDS - System Protection
@@ -196,14 +211,23 @@ allowed_operations:
     allowed_operations: [SELECT]
     deny_operations: [INSERT, UPDATE, DELETE, DROP]
   
-  # Safe robot movements
+  # Safe robot movements (Reachy Mini: head + antennas only)
   - tool: reachy_move
     allowed_actions:
-      - head_turn
+      - head_turn_left
+      - head_turn_right
       - head_nod
-      - wave_gesture
-      - point_gesture
+      - head_tilt
+      - antenna_wiggle  # Expressive antenna movement
+      - antenna_alert  # Both antennas perk up
+      - idle_animation  # Subtle breathing/alive motion
     max_velocity: 0.3
+    # Block any arm-related commands (Reachy Mini has no arms)
+    blocked_actions:
+      - wave
+      - point
+      - reach
+      - grasp
     
   # Customer interaction
   - tool: display_screen
@@ -237,11 +261,12 @@ rate_limits:
     window: 1m
     action: THROTTLE
     
-  # Prevent movement thrashing
+  # Prevent movement thrashing (head/antenna jerking)
   - tool: reachy_move
     limit: 30
     window: 1m
     action: BLOCK
+    reason: "Excessive movement commands - protect motor health and prevent customer discomfort"
 
 # ═══════════════════════════════════════════════════════════
 # AUDIT & LOGGING
@@ -265,7 +290,7 @@ audit:
 emergency:
   # Physical emergency stop
   e_stop_keyword: "EMERGENCY STOP"
-  e_stop_action: FREEZE_ALL_MOVEMENT
+  e_stop_action: FREEZE_ALL_MOVEMENT  # Freeze head and antenna motors immediately
   
   # System safety
   fail_mode: safe  # Block all on policy error
@@ -359,9 +384,11 @@ npm run test:retail -- --full
    🛑 BLOCKED: "DROP TABLE products"
 
 ✅ Movement Safety
-   🛑 BLOCKED: arm velocity 0.8 m/s (exceeds max 0.3)
-   ✅ ALLOWED: head_turn at 0.2 m/s
-   ✅ ALLOWED: wave_gesture (safe range)
+   🛑 BLOCKED: head_pan velocity 0.8 rad/s (exceeds max 0.3)
+   🛑 BLOCKED: wave_gesture (Reachy Mini has no arms)
+   ✅ ALLOWED: head_turn at 0.2 rad/s
+   ✅ ALLOWED: antenna_wiggle at 0.4 rad/s
+   ✅ ALLOWED: head_nod (within tilt limits)
 
 ✅ Data Protection
    🛑 BLOCKED: read ~/.ssh/id_rsa
