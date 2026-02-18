@@ -24,8 +24,7 @@ While Reachy handles *what customers want*, SafetyClawz monitors *how interactio
 
 ## The RRCP Behavioral Challenge
 
-### Retail Environment: Travel Stop / Truck Stop Chains
-*(Pilot Flying J, Love's Travel Stops, TravelCenters of America)*
+### Retail Environment: Road Ranger Stores
 
 **Operational Reality:**
 - 🏪 **Large-format stores** (10,000+ sq ft, 3,000–8,000 SKUs)
@@ -207,7 +206,7 @@ karen_whisperer:
 
 **Why This Matters:**
 
-In a **24/7 understaffed truck stop**, a single overnight associate managing 10,000 sq ft cannot:
+In a **24/7 understaffed Road Ranger store**, a single overnight associate managing 10,000 sq ft cannot:
 - Monitor all customer interactions
 - Detect escalations before they become incidents
 - Respond instantly to distressed customers
@@ -226,7 +225,7 @@ Every SafetyClawz event is **anchored to physical space** via Planolyzer integra
 {
   "alert_id": "ESC-2026-02-18-0342",
   "timestamp": "2026-02-18T03:42:15.234Z",
-  "store_id": "pilot-fj-store-1847",
+  "store_id": "road-ranger-store-1847",
   "alert_type": "ESCALATION_TIER_2",
   "customer_location": {
     "zone": "Front Wall",
@@ -284,7 +283,7 @@ Every customer interaction is logged for:
 {
   "event_id": "INT-2026-02-18-0342-001",
   "timestamp": "2026-02-18T03:42:08.765Z",
-  "store_id": "pilot-fj-store-1847",
+  "store_id": "road-ranger-store-1847",
   "event_type": "customer_interaction_started",
   "session_id": "sess-abc123",
   "customer_query": "Where's the damn DEF fluid?",
@@ -312,7 +311,7 @@ Every customer interaction is logged for:
 
 ```bash
 # CLI tool for audit log queries
-safetyclawz-audit --store pilot-fj-store-1847 --date 2026-02-18 --escalations-only
+safetyclawz-audit --store road-ranger-store-1847 --date 2026-02-18 --escalations-only
 
 # Expected output:
 🚨 3 escalations on 2026-02-18:
@@ -350,13 +349,13 @@ For retail chains deploying RRCP across **5–500 locations**, SafetyClawz provi
 
 ## RRCP-Specific Policy Configuration
 
-### Example: Truck Stop Safety Policy
+### Example: Road Ranger Safety Policy
 
 Create `~/.safetyclawz/rrcp-policy.yaml`:
 
 ```yaml
 version: "1.0"
-name: "RRCP Behavioral Compliance Policy - Truck Stop Chain"
+name: "RRCP Behavioral Compliance Policy - Road Ranger Chain"
 description: "Behavioral monitoring for Reachy Mini customer interactions"
 
 # ═══════════════════════════════════════════════════════════
@@ -540,7 +539,7 @@ emergency:
 
 ### Pre-Deployment Test Scenarios
 
-Run these tests **before** deploying to production truck stops:
+Run these tests **before** deploying to production Road Ranger stores:
 
 ```bash
 # 1. Test sentiment detection accuracy
@@ -619,7 +618,7 @@ Staff Response: Manager Jane alerted via mobile: "ESC-2026-02-18-0342 - Kiosk Ar
 
 ```
 ┌────────────────────────────────────────────┐
-│  Truck Stop Store #1847 (Edge Hardware)   │
+│  Road Ranger Store #1847 (Edge Hardware)  │
 ├────────────────────────────────────────────┤
 │                                            │
 │  ┌──────────────────────────────────────┐ │
@@ -764,7 +763,7 @@ Both are SafetyClawz, but applied to different layers of the RRCP stack.
 - **SafetyClawz handles:** Behavioral monitoring, early escalation detection, alert routing
 - **Human staff handle:** Complex issues, empathetic resolution, physical assistance, managerial decisions
 
-In a **24/7 understaffed truck stop**, SafetyClawz enables a solo overnight associate to:
+In a **24/7 understaffed Road Ranger store**, SafetyClawz enables a solo overnight associate to:
 - Monitor customer sentiment without being physically present at the kiosk
 - Respond to escalations **before** they become incidents
 - Focus on high-value tasks (restocking, fuel desk) while Reachy handles tier-1 queries
@@ -826,7 +825,7 @@ Before deploying SafetyClawz for RRCP:
 
 - [ ] **Planolyzer API configured** (spatial alert endpoints)
 - [ ] **OpenClaw plugin installed** (SafetyClawz loaded as plugin)
-- [ ] **RRCP policy file created** (behavioral thresholds tuned for truck stop environment)
+- [ ] **RRCP policy file created** (behavioral thresholds tuned for Road Ranger environment)
 - [ ] **Staff alert devices configured** (push notifications to manager tablets/phones)
 - [ ] **Edge hardware deployed** (Intel NUC or equivalent, local sentiment model)
 - [ ] **Cloud compliance dashboard deployed** (multi-store analytics)
